@@ -1,0 +1,410 @@
+Root
+
+platform/                         # monorepo root
+├── .env.example
+├── .gitignore
+├── docker-compose.yml              # full stack local dev
+├── docker-compose.prod.yml
+├── Makefile                         # dev, test, build, migrate shortcuts
+├── README.md
+├── scripts/
+│   ├── seed.sh
+│   ├── migrate.sh
+│   └── generate-keys.sh
+├── frontend/                        # Nuxt 3 application
+└── backend/                         # Go application
+
+Frontend — Nuxt 3 (srcDir: app)
+
+frontend/
+├── nuxt.config.ts
+├── tsconfig.json                   # strict: true
+├── tailwind.config.ts
+├── package.json
+├── .env
+├── .env.example
+├── vitest.config.ts
+│
+├── app/                             # srcDir
+│   ├── app.vue
+│   │
+│   ├── assets/
+│   │   ├── css/
+│   │   │   ├── main.css
+│   │   │   └── variables.css
+│   │   └── images/
+│   │       └── logo.svg
+│   │
+│   ├── components/
+│   │   ├── ui/                      # reusable design system components
+│   │   │   ├── UiButton.vue
+│   │   │   ├── UiInput.vue
+│   │   │   ├── UiModal.vue
+│   │   │   ├── UiTable.vue
+│   │   │   ├── UiPagination.vue
+│   │   │   ├── UiBadge.vue
+│   │   │   ├── UiAlert.vue
+│   │   │   ├── UiDropdown.vue
+│   │   │   ├── UiToast.vue
+│   │   │   └── UiSkeleton.vue
+│   │   │
+│   │   ├── layout/
+│   │   │   ├── AppHeader.vue
+│   │   │   ├── AppFooter.vue
+│   │   │   ├── AppSidebar.vue
+│   │   │   └── AppNavbar.vue
+│   │   │
+│   │   ├── auth/
+│   │   │   ├── AuthLoginForm.vue
+│   │   │   ├── AuthRegisterForm.vue
+│   │   │   └── AuthResetPasswordForm.vue
+│   │   │
+│   │   ├── items/                   # domain-agnostic; rename per product
+│   │   │   ├── ItemCard.vue
+│   │   │   ├── ItemGrid.vue
+│   │   │   ├── ItemDetail.vue
+│   │   │   └── ItemSearchBar.vue
+│   │   │
+│   │   ├── orders/
+│   │   │   ├── OrderSummary.vue
+│   │   │   ├── OrderStatusBadge.vue
+│   │   │   └── OrderTimeline.vue
+│   │   │
+│   │   ├── payments/
+│   │   │   ├── PaymentMethodSelector.vue
+│   │   │   └── PaymentStatusCard.vue
+│   │   │
+│   │   ├── notifications/
+│   │   │   └── NotificationBell.vue
+│   │   │
+│   │   ├── admin/
+│   │   │   ├── AdminStatCard.vue
+│   │   │   ├── AdminDataTable.vue
+│   │   │   └── AdminUserRow.vue
+│   │   │
+│   │   └── shared/
+│   │       ├── FileUploader.vue
+│   │       ├── SearchInput.vue
+│   │       └── EmptyState.vue
+│   │
+│   ├── composables/
+│   │   ├── useAuth.ts
+│   │   ├── useCurrentUser.ts
+│   │   ├── usePermissions.ts         # RBAC checks
+│   │   ├── useItems.ts
+│   │   ├── useOrders.ts
+│   │   ├── usePayments.ts
+│   │   ├── useSearch.ts
+│   │   ├── useUpload.ts
+│   │   ├── useNotifications.ts
+│   │   ├── useWebSocket.ts           # WS client lifecycle
+│   │   ├── usePagination.ts
+│   │   ├── useToast.ts
+│   │   └── useApi.ts                 # base fetch wrapper + error handling
+│   │
+│   ├── layouts/
+│   │   ├── default.vue
+│   │   ├── auth.vue
+│   │   ├── admin.vue
+│   │   └── blank.vue
+│   │
+│   ├── middleware/
+│   │   ├── auth.global.ts            # blocks unauthenticated routes globally
+│   │   ├── guest.ts                  # redirect logged-in users away from /login
+│   │   ├── role.ts                   # RBAC gate by route meta
+│   │   └── admin.ts
+│   │
+│   ├── pages/
+│   │   ├── index.vue
+│   │   ├── auth/
+│   │   │   ├── login.vue
+│   │   │   ├── register.vue
+│   │   │   ├── forgot-password.vue
+│   │   │   └── reset-password.vue
+│   │   ├── dashboard/
+│   │   │   └── index.vue
+│   │   ├── items/
+│   │   │   ├── index.vue
+│   │   │   └── [id].vue
+│   │   ├── orders/
+│   │   │   ├── index.vue
+│   │   │   └── [id].vue
+│   │   ├── account/
+│   │   │   ├── profile.vue
+│   │   │   └── settings.vue
+│   │   └── admin/
+│   │       ├── index.vue
+│   │       ├── users.vue
+│   │       ├── roles.vue
+│   │       ├── items.vue
+│   │       ├── orders.vue
+│   │       └── settings.vue
+│   │
+│   ├── plugins/
+│   │   ├── api.client.ts             # inject $api globally
+│   │   ├── auth.client.ts
+│   │   └── websocket.client.ts       # open WS on mount
+│   │
+│   ├── services/                    # API layer abstraction (no raw fetch in components)
+│   │   ├── auth.service.ts
+│   │   ├── users.service.ts
+│   │   ├── items.service.ts
+│   │   ├── orders.service.ts
+│   │   ├── payments.service.ts
+│   │   ├── notifications.service.ts
+│   │   ├── search.service.ts
+│   │   ├── upload.service.ts
+│   │   └── admin.service.ts
+│   │
+│   ├── stores/                      # Pinia stores
+│   │   ├── auth.store.ts             # tokens, user session
+│   │   ├── user.store.ts
+│   │   ├── cart.store.ts             # optional; activate per domain
+│   │   ├── notification.store.ts
+│   │   ├── ui.store.ts               # sidebar, theme, toasts
+│   │   └── search.store.ts
+│   │
+│   ├── types/
+│   │   ├── api.types.ts              # response envelopes, pagination
+│   │   ├── auth.types.ts
+│   │   ├── user.types.ts
+│   │   ├── role.types.ts
+│   │   ├── item.types.ts
+│   │   ├── order.types.ts
+│   │   ├── payment.types.ts
+│   │   └── notification.types.ts
+│   │
+│   ├── utils/
+│   │   ├── format.ts                 # currency, date, string helpers
+│   │   ├── validators.ts
+│   │   ├── constants.ts
+│   │   └── http-errors.ts
+│   │
+│   └── server/                      # Nitro server routes (BFF layer, optional)
+│       └── api/
+│           └── health.get.ts
+│
+└── tests/
+    ├── unit/
+    │   ├── composables/useAuth.test.ts
+    │   └── utils/format.test.ts
+    └── e2e/
+        ├── auth.spec.ts
+        └── items.spec.ts
+
+Backend — Go (Clean Architecture)
+
+backend/
+├── go.mod
+├── go.sum
+├── Makefile
+├── .env
+├── .env.example
+├── Dockerfile
+├── Dockerfile.dev
+│
+├── cmd/
+│   ├── api/
+│   │   └── main.go               # entrypoint: wires DI, starts HTTP + WS server
+│   └── worker/
+│       └── main.go               # entrypoint: event queue consumer process
+│
+├── config/
+│   ├── config.go                 # viper loader; maps env → struct
+│   └── config_test.go
+│
+├── internal/                     # domain modules — not importable externally
+│   │
+│   ├── auth/
+│   │   ├── domain.go             # Auth, Session, Token value objects
+│   │   ├── repository.go         # interface: TokenRepo
+│   │   ├── repository_postgres.go
+│   │   ├── service.go            # Login, Logout, RefreshToken, VerifyToken
+│   │   ├── service_test.go
+│   │   ├── handler.go            # HTTP handlers (register, login, refresh)
+│   │   ├── handler_test.go
+│   │   └── routes.go
+│   │
+│   ├── users/
+│   │   ├── domain.go             # User, Profile value objects
+│   │   ├── repository.go
+│   │   ├── repository_postgres.go
+│   │   ├── service.go
+│   │   ├── service_test.go
+│   │   ├── handler.go
+│   │   ├── handler_test.go
+│   │   └── routes.go
+│   │
+│   ├── roles/                    # RBAC module
+│   │   ├── domain.go             # Role, Permission value objects
+│   │   ├── repository.go
+│   │   ├── repository_postgres.go
+│   │   ├── service.go            # AssignRole, HasPermission, ListRoles
+│   │   ├── service_test.go
+│   │   ├── handler.go
+│   │   └── routes.go
+│   │
+│   ├── items/                    # generic entity module (products/listings/rooms etc.)
+│   │   ├── domain.go             # Item, Category, Variant
+│   │   ├── repository.go
+│   │   ├── repository_postgres.go
+│   │   ├── service.go            # CRUD, availability, soft-delete
+│   │   ├── service_test.go
+│   │   ├── handler.go
+│   │   ├── handler_test.go
+│   │   └── routes.go
+│   │
+│   ├── orders/                   # generic: orders / bookings / reservations
+│   │   ├── domain.go             # Order, OrderItem, OrderStatus
+│   │   ├── repository.go
+│   │   ├── repository_postgres.go
+│   │   ├── service.go            # PlaceOrder, CancelOrder, UpdateStatus
+│   │   ├── service_test.go
+│   │   ├── handler.go
+│   │   ├── handler_test.go
+│   │   └── routes.go
+│   │
+│   ├── payments/
+│   │   ├── domain.go             # Transaction, PaymentStatus, Provider
+│   │   ├── repository.go
+│   │   ├── repository_postgres.go
+│   │   ├── service.go            # InitiatePayment, VerifyPayment, Refund
+│   │   ├── service_test.go
+│   │   ├── handler.go            # unified webhook endpoint + per-provider routes
+│   │   ├── handler_test.go
+│   │   ├── routes.go
+│   │   └── providers/           # TODO: implement each provider interface
+│   │       ├── provider.go       # Provider interface
+│   │       ├── mpesa.go          # M-Pesa STK push, C2B, B2C
+│   │       ├── stripe.go         # Stripe PaymentIntents + webhooks
+│   │       ├── flutterwave.go    # Flutterwave Collect
+│   │       └── paystack.go       # Paystack Charge + verify
+│   │
+│   ├── notifications/
+│   │   ├── domain.go             # Notification, Channel (email/sms/push/in-app)
+│   │   ├── repository.go
+│   │   ├── repository_postgres.go
+│   │   ├── service.go            # Send, MarkRead, ListForUser
+│   │   ├── service_test.go
+│   │   ├── handler.go
+│   │   ├── routes.go
+│   │   └── channels/            # TODO: implement each channel adapter
+│   │       ├── channel.go        # Channel interface
+│   │       ├── email.go          # SMTP / SendGrid / SES
+│   │       ├── sms.go            # Africa's Talking / Twilio
+│   │       └── push.go           # FCM / APNs
+│   │
+│   ├── search/
+│   │   ├── domain.go             # SearchQuery, SearchResult
+│   │   ├── repository.go         # SearchRepo interface (swap ES / pg full-text)
+│   │   ├── repository_postgres.go # pg tsvector fallback
+│   │   ├── service.go
+│   │   ├── handler.go
+│   │   └── routes.go
+│   │
+│   ├── uploads/
+│   │   ├── domain.go             # Upload, FileMetadata
+│   │   ├── repository.go
+│   │   ├── repository_postgres.go
+│   │   ├── service.go            # UploadFile, DeleteFile, GetSignedURL
+│   │   ├── service_test.go
+│   │   ├── handler.go            # multipart + presigned URL endpoints
+│   │   ├── routes.go
+│   │   └── storage/             # TODO: implement storage backends
+│   │       ├── storage.go        # Storage interface
+│   │       ├── s3.go
+│   │       └── local.go          # dev fallback
+│   │
+│   ├── websocket/
+│   │   ├── hub.go               # connection registry, broadcast, rooms
+│   │   ├── client.go            # per-connection goroutine pair (read/write pump)
+│   │   ├── handler.go           # HTTP upgrade endpoint
+│   │   ├── message.go           # typed message envelope
+│   │   └── routes.go
+│   │
+│   └── admin/
+│       ├── domain.go
+│       ├── service.go            # stats, aggregations, impersonate
+│       ├── handler.go
+│       └── routes.go
+│
+├── pkg/                          # shared, importable utilities
+│   ├── apierror/
+│   │   └── apierror.go          # structured error types + HTTP mapping
+│   ├── response/
+│   │   └── response.go          # JSON success/error envelope helpers
+│   ├── validator/
+│   │   └── validator.go         # go-playground/validator wrapper
+│   ├── logger/
+│   │   └── logger.go            # zerolog/zap structured logger
+│   ├── jwt/
+│   │   ├── jwt.go               # Sign, Parse, Refresh helpers
+│   │   └── jwt_test.go
+│   ├── password/
+│   │   └── password.go          # bcrypt hash + compare
+│   ├── pagination/
+│   │   └── pagination.go        # Cursor + offset pagination helpers
+│   ├── cache/
+│   │   ├── cache.go             # Cache interface
+│   │   └── redis.go
+│   ├── idgen/
+│   │   └── idgen.go             # ULID / UUID generation
+│   ├── crypto/
+│   │   └── crypto.go            # HMAC signing for webhook verification
+│   └── testutil/
+│       └── testutil.go          # shared test helpers, in-memory DB
+│
+├── middleware/                   # HTTP middleware (framework-agnostic)
+│   ├── auth.go                   # JWT validation, attach user to ctx
+│   ├── rbac.go                   # permission gate by role
+│   ├── logger.go                 # structured request logging
+│   ├── cors.go
+│   ├── ratelimit.go              # token bucket, configurable per route
+│   ├── recovery.go               # panic → 500 with stack trace
+│   ├── requestid.go              # inject X-Request-ID
+│   └── validate.go               # body decode + validation helper
+│
+├── events/                       # event-driven / async layer
+│   ├── broker.go                 # Broker interface (publish/subscribe)
+│   ├── rabbitmq.go               # RabbitMQ implementation
+│   ├── inmemory.go               # in-process bus for dev/test
+│   ├── topics.go                 # typed topic constants
+│   └── handlers/                # async event consumers
+│       ├── send_email.go
+│       ├── send_sms.go
+│       ├── send_push.go
+│       ├── process_payment.go
+│       ├── order_confirmed.go
+│       └── audit_log.go
+│
+├── database/
+│   ├── database.go               # pgx pool init, health ping
+│   ├── database_test.go
+│   └── migrations/              # versioned SQL, run via golang-migrate
+│       ├── 000001_create_extensions.up.sql
+│       ├── 000001_create_extensions.down.sql
+│       ├── 000002_create_users.up.sql
+│       ├── 000002_create_users.down.sql
+│       ├── 000003_create_roles_permissions.up.sql
+│       ├── 000003_create_roles_permissions.down.sql
+│       ├── 000004_create_items.up.sql
+│       ├── 000004_create_items.down.sql
+│       ├── 000005_create_orders.up.sql
+│       ├── 000005_create_orders.down.sql
+│       ├── 000006_create_payments.up.sql
+│       ├── 000006_create_payments.down.sql
+│       ├── 000007_create_notifications.up.sql
+│       ├── 000007_create_notifications.down.sql
+│       ├── 000008_create_uploads.up.sql
+│       ├── 000008_create_uploads.down.sql
+│       └── 000009_create_search_indexes.up.sql
+│
+└── tests/
+    ├── integration/
+    │   ├── auth_test.go
+    │   ├── orders_test.go
+    │   └── payments_test.go
+    └── mocks/
+        ├── mock_user_repo.go
+        ├── mock_payment_provider.go
+        └── mock_event_broker.go
