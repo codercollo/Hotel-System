@@ -1,0 +1,22 @@
+FROM golang:1.23-alpine
+
+RUN apk add --no-cache git curl bash openssl
+
+# Install Air for hot-reload
+RUN go install github.com/air-verse/air@latest
+
+# Install golang-migrate
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+WORKDIR /app
+
+# Copy go mod files first for better layer caching
+COPY go.mod go.sum* ./
+RUN go mod download 2>/dev/null || true
+
+# Copy source
+COPY . .
+
+EXPOSE 8080
+
+CMD ["air", "-c", ".air.toml"]
