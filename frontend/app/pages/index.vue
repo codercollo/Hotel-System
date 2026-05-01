@@ -121,7 +121,7 @@ const guests = ref("1");
 <template>
   <div>
     <!-- ══ HERO ══════════════════════════════════════════════════════════ -->
-    <section class="relative min-h-[90vh] flex items-center overflow-hidden">
+    <section class="relative min-h-[90vh] flex items-center">
       <!-- Background image -->
       <div class="absolute inset-0 bg-brand-900">
         <div
@@ -262,7 +262,7 @@ const guests = ref("1");
     </section>
 
     <!-- Spacer for booking widget overflow -->
-    <div class="h-24" />
+    <div class="h-20 sm:h-24 lg:h-16" />
 
     <!-- ══ TICKER STRIP ════════════════════════════════════════════════ -->
     <div class="ticker-strip py-3.5">
