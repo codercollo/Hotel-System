@@ -1,0 +1,71 @@
+platform-backend/
+├── .env
+├── .env.example
+├── go.mod
+├── go.sum
+├── Makefile
+├── Dockerfile
+├── Dockerfile.dev
+│
+├── cmd/
+│   ├── api/main.go
+│   └── worker/main.go
+│
+├── config/
+│   ├── config.go
+│   └── config_test.go
+│
+├── internal/
+│   ├── auth/
+│   ├── users/
+│   ├── roles/
+│   ├── items/
+│   ├── orders/
+│   ├── payments/
+│   │   └── providers/
+│   ├── notifications/
+│   │   └── channels/
+│   ├── search/
+│   ├── uploads/
+│   │   └── storage/
+│   ├── websocket/
+│   └── admin/
+│
+├── pkg/
+│   ├── apierror/
+│   ├── response/
+│   ├── validator/
+│   ├── logger/
+│   ├── jwt/
+│   ├── password/
+│   ├── pagination/
+│   ├── cache/
+│   ├── idgen/
+│   ├── crypto/
+│   └── testutil/
+│
+├── middleware/
+│   ├── auth.go
+│   ├── rbac.go
+│   ├── logger.go
+│   ├── cors.go
+│   ├── ratelimit.go
+│   ├── recovery.go
+│   ├── requestid.go
+│   └── validate.go
+│
+├── events/
+│   ├── broker.go
+│   ├── rabbitmq.go
+│   ├── inmemory.go
+│   ├── topics.go
+│   └── handlers/
+│
+├── database/
+│   ├── database.go
+│   ├── database_test.go
+│   └── migrations/
+│
+└── tests/
+    ├── integration/
+    └── mocks/

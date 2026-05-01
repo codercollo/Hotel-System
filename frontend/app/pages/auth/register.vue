@@ -1,0 +1,84 @@
+<script setup lang="ts">
+definePageMeta({ layout: "auth" });
+useHead({ title: "Create Account" });
+
+const name = ref("");
+const email = ref("");
+const password = ref("");
+const confirm = ref("");
+const loading = ref(false);
+const error = ref("");
+
+const onSubmit = async () => {
+  if (password.value !== confirm.value) {
+    error.value = "Passwords do not match.";
+    return;
+  }
+  loading.value = true;
+  error.value = "";
+  await new Promise((r) => setTimeout(r, 800));
+  loading.value = false;
+};
+</script>
+
+<template>
+  <div>
+    <p class="eyebrow mb-3">Get Started</p>
+    <h2 class="font-display text-display-md text-brand-900 font-light mb-2">
+      Create your account
+    </h2>
+    <p class="text-sm text-muted font-sans mb-8">
+      Already have an account?
+      <NuxtLink to="/auth/login" class="text-forest hover:underline"
+        >Sign in</NuxtLink
+      >
+    </p>
+
+    <UiAlert v-if="error" type="error" :message="error" class="mb-5" />
+
+    <div class="space-y-4">
+      <UiInput
+        v-model="name"
+        label="Full Name"
+        placeholder="Jane Smith"
+        icon="lucide:user"
+      />
+      <UiInput
+        v-model="email"
+        label="Email Address"
+        type="email"
+        placeholder="you@example.com"
+        icon="lucide:mail"
+      />
+      <UiInput
+        v-model="password"
+        label="Password"
+        type="password"
+        placeholder="At least 8 characters"
+        icon="lucide:lock"
+      />
+      <UiInput
+        v-model="confirm"
+        label="Confirm Password"
+        type="password"
+        placeholder="Repeat password"
+        icon="lucide:lock"
+      />
+
+      <UiButton
+        @click="onSubmit"
+        :loading="loading"
+        size="md"
+        class="w-full justify-center mt-2"
+      >
+        Create Account
+      </UiButton>
+    </div>
+
+    <p class="text-xs text-muted font-sans mt-6 text-center">
+      By creating an account you agree to our
+      <a href="#" class="text-forest hover:underline">Terms</a> &amp;
+      <a href="#" class="text-forest hover:underline">Privacy Policy</a>
+    </p>
+  </div>
+</template>

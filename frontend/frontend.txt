@@ -1,0 +1,175 @@
+platform-frontend/
+├── .env
+├── .env.example
+├── package.json
+├── tsconfig.json
+├── nuxt.config.ts
+├── tailwind.config.ts
+├── vitest.config.ts
+│
+├── app/
+│   ├── app.vue
+│   │
+│   ├── assets/
+│   │   ├── css/
+│   │   │   ├── main.css
+│   │   │   └── variables.css
+│   │   └── images/
+│   │       └── logo.svg
+│   │
+│   ├── components/
+│   │   ├── ui/
+│   │   │   ├── UiButton.vue
+│   │   │   ├── UiInput.vue
+│   │   │   ├── UiModal.vue
+│   │   │   ├── UiTable.vue
+│   │   │   ├── UiPagination.vue
+│   │   │   ├── UiBadge.vue
+│   │   │   ├── UiAlert.vue
+│   │   │   ├── UiDropdown.vue
+│   │   │   ├── UiToast.vue
+│   │   │   └── UiSkeleton.vue
+│   │   │
+│   │   ├── layout/
+│   │   │   ├── AppHeader.vue
+│   │   │   ├── AppFooter.vue
+│   │   │   ├── AppSidebar.vue
+│   │   │   └── AppNavbar.vue
+│   │   │
+│   │   ├── auth/
+│   │   │   ├── AuthLoginForm.vue
+│   │   │   ├── AuthRegisterForm.vue
+│   │   │   └── AuthResetPasswordForm.vue
+│   │   │
+│   │   ├── items/
+│   │   │   ├── ItemCard.vue
+│   │   │   ├── ItemGrid.vue
+│   │   │   ├── ItemDetail.vue
+│   │   │   └── ItemSearchBar.vue
+│   │   │
+│   │   ├── orders/
+│   │   │   ├── OrderSummary.vue
+│   │   │   ├── OrderStatusBadge.vue
+│   │   │   └── OrderTimeline.vue
+│   │   │
+│   │   ├── payments/
+│   │   │   ├── PaymentMethodSelector.vue
+│   │   │   └── PaymentStatusCard.vue
+│   │   │
+│   │   ├── notifications/
+│   │   │   └── NotificationBell.vue
+│   │   │
+│   │   ├── admin/
+│   │   │   ├── AdminStatCard.vue
+│   │   │   ├── AdminDataTable.vue
+│   │   │   └── AdminUserRow.vue
+│   │   │
+│   │   └── shared/
+│   │       ├── FileUploader.vue
+│   │       ├── SearchInput.vue
+│   │       └── EmptyState.vue
+│   │
+│   ├── composables/
+│   │   ├── useAuth.ts
+│   │   ├── useCurrentUser.ts
+│   │   ├── usePermissions.ts
+│   │   ├── useItems.ts
+│   │   ├── useOrders.ts
+│   │   ├── usePayments.ts
+│   │   ├── useSearch.ts
+│   │   ├── useUpload.ts
+│   │   ├── useNotifications.ts
+│   │   ├── useWebSocket.ts
+│   │   ├── usePagination.ts
+│   │   ├── useToast.ts
+│   │   └── useApi.ts
+│   │
+│   ├── layouts/
+│   │   ├── default.vue
+│   │   ├── auth.vue
+│   │   ├── admin.vue
+│   │   └── blank.vue
+│   │
+│   ├── middleware/
+│   │   ├── auth.global.ts
+│   │   ├── guest.ts
+│   │   ├── role.ts
+│   │   └── admin.ts
+│   │
+│   ├── pages/
+│   │   ├── index.vue
+│   │   ├── auth/
+│   │   │   ├── login.vue
+│   │   │   ├── register.vue
+│   │   │   ├── forgot-password.vue
+│   │   │   └── reset-password.vue
+│   │   ├── dashboard/
+│   │   │   └── index.vue
+│   │   ├── items/
+│   │   │   ├── index.vue
+│   │   │   └── [id].vue
+│   │   ├── orders/
+│   │   │   ├── index.vue
+│   │   │   └── [id].vue
+│   │   ├── account/
+│   │   │   ├── profile.vue
+│   │   │   └── settings.vue
+│   │   └── admin/
+│   │       ├── index.vue
+│   │       ├── users.vue
+│   │       ├── roles.vue
+│   │       ├── items.vue
+│   │       ├── orders.vue
+│   │       └── settings.vue
+│   │
+│   ├── plugins/
+│   │   ├── api.client.ts
+│   │   ├── auth.client.ts
+│   │   └── websocket.client.ts
+│   │
+│   ├── services/
+│   │   ├── auth.service.ts
+│   │   ├── users.service.ts
+│   │   ├── items.service.ts
+│   │   ├── orders.service.ts
+│   │   ├── payments.service.ts
+│   │   ├── notifications.service.ts
+│   │   ├── search.service.ts
+│   │   ├── upload.service.ts
+│   │   └── admin.service.ts
+│   │
+│   ├── stores/
+│   │   ├── auth.store.ts
+│   │   ├── user.store.ts
+│   │   ├── cart.store.ts
+│   │   ├── notification.store.ts
+│   │   ├── ui.store.ts
+│   │   └── search.store.ts
+│   │
+│   ├── types/
+│   │   ├── api.types.ts
+│   │   ├── auth.types.ts
+│   │   ├── user.types.ts
+│   │   ├── role.types.ts
+│   │   ├── item.types.ts
+│   │   ├── order.types.ts
+│   │   ├── payment.types.ts
+│   │   └── notification.types.ts
+│   │
+│   ├── utils/
+│   │   ├── format.ts
+│   │   ├── validators.ts
+│   │   ├── constants.ts
+│   │   └── http-errors.ts
+│   │
+│   └── server/
+│       └── api/
+│           └── health.get.ts
+│
+└── tests/
+    ├── unit/
+    │   ├── composables/useAuth.test.ts
+    │   └── utils/format.test.ts
+    └── e2e/
+        ├── auth.spec.ts
+        └── items.spec.ts
