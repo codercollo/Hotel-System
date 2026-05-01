@@ -24,7 +24,7 @@ defineEmits<{ "update:modelValue": [value: string] }>();
       <Icon
         v-if="icon"
         :name="icon"
-        class="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-4 h-4 pointer-events-none"
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-4 h-4 pointer-events-none z-10"
       />
       <input
         :type="type ?? 'text'"
@@ -33,7 +33,7 @@ defineEmits<{ "update:modelValue": [value: string] }>();
         :disabled="disabled"
         :class="[
           'input',
-          { 'pl-9': icon },
+          { '!pl-10': icon },
           { 'border-red-400 focus:border-red-400': error },
         ]"
         @input="
