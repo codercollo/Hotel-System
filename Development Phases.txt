@@ -1,4 +1,4 @@
-implementation / development plan
+~~~~ implementation / development plan ~~~~
 
 ## Phase 0 — Platform Bootstrapping (No business logic)
 
