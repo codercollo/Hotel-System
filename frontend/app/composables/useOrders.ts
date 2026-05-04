@@ -1,5 +1,4 @@
-// useOrders — Phase 4 wires this to the orders API
-import type { Order } from "~/types/order.types";
+import type { Order, CreateOrderRequest } from "~/types/order.types";
 
 export const useOrders = () => {
   const api = useApi();
@@ -7,12 +6,19 @@ export const useOrders = () => {
   const order = ref<Order | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const total = ref(0);
 
   const list = async (params?: Record<string, string>) => {
     loading.value = true;
     error.value = null;
     try {
-      orders.value = await api.get<Order[]>("/api/v1/orders", params);
+      // Backend returns { data: Order[], meta: { total, limit, offset } }
+      // useApi unwraps data → Order[]
+      orders.value = await api.get<Order[]>("/api/v1/orders", {
+        limit: "50",
+        offset: "0",
+        ...params,
+      });
     } catch (e: any) {
       error.value = e.message;
     } finally {
@@ -32,7 +38,7 @@ export const useOrders = () => {
     }
   };
 
-  const create = async (payload: unknown) => {
+  const create = async (payload: CreateOrderRequest) => {
     loading.value = true;
     error.value = null;
     try {
@@ -46,5 +52,22 @@ export const useOrders = () => {
     }
   };
 
-  return { orders, order, loading, error, list, get, create };
+  const cancel = async (id: string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      order.value = await api.patch<Order>(`/api/v1/orders/${id}/cancel`, {});
+      // Update in list if present
+      const idx = orders.value.findIndex((o) => o.id === id);
+      if (idx !== -1 && order.value) orders.value[idx] = order.value;
+      return order.value;
+    } catch (e: any) {
+      error.value = e.message;
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  return { orders, order, loading, error, total, list, get, create, cancel };
 };

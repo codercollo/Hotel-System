@@ -1,53 +1,120 @@
-// useWebSocket — Phase 9 implements the full real-time layer
-export const useWebSocket = () => {
-  const config = useRuntimeConfig();
-  let ws: WebSocket | null = null;
-  const connected = ref(false);
-  const handlers = new Map<string, ((payload: any) => void)[]>();
+import type { Notification } from "~/types/notification.types";
 
-  const connect = (token: string) => {
-    if (ws) return;
-    ws = new WebSocket(`${config.public.wsBase}/ws?token=${token}`);
+export const useWebSocket = (wsBase: string) => {
+  let socket: WebSocket | null = null;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let retryCount = 0;
+  let currentToken = "";
 
-    ws.onopen = () => {
-      connected.value = true;
-    };
-    ws.onclose = () => {
-      connected.value = false;
-      ws = null;
-    };
-    ws.onerror = () => {
-      connected.value = false;
-    };
+  const MAX_RETRIES = 10;
+  const BASE_DELAY = 1_000;
+  const MAX_DELAY = 30_000;
 
-    ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        const fns = handlers.get(msg.type) ?? [];
-        fns.forEach((fn) => fn(msg.payload));
-      } catch {
-        /* ignore malformed */
+  function backoffDelay(): number {
+    const exp = Math.min(BASE_DELAY * 2 ** retryCount, MAX_DELAY);
+    return exp + Math.random() * 1_000;
+  }
+
+  function dispatch(msg: { type: string; payload: unknown }) {
+    switch (msg.type) {
+      case "notification": {
+        const notifStore = useNotificationStore();
+        notifStore.push(msg.payload as Notification);
+        break;
+      }
+      case "order_status": {
+        // Broadcast to any listening composable via a custom event
+        // so order detail pages can react without polling
+        if (import.meta.client) {
+          window.dispatchEvent(
+            new CustomEvent("ws:order_status", { detail: msg.payload }),
+          );
+        }
+        break;
+      }
+      case "payment_status": {
+        if (import.meta.client) {
+          window.dispatchEvent(
+            new CustomEvent("ws:payment_status", { detail: msg.payload }),
+          );
+        }
+        break;
+      }
+      case "pong":
+        break;
+      default:
+        console.debug("[WS] unhandled message type:", msg.type);
+    }
+  }
+
+  function connect(token: string) {
+    currentToken = token;
+    if (socket?.readyState === WebSocket.OPEN) return;
+
+    const url = `${wsBase}/ws?token=${encodeURIComponent(token)}`;
+    socket = new WebSocket(url);
+
+    let lastFetch = 0;
+
+    socket.onopen = () => {
+      console.debug("[WS] connected");
+      retryCount = 0;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      // Only fetch notifications if last fetch was >30s ago
+      const now = Date.now();
+      if (now - lastFetch > 30_000) {
+        lastFetch = now;
+        useNotifications().fetch();
       }
     };
-  };
 
-  const disconnect = () => {
-    ws?.close();
-    ws = null;
-    connected.value = false;
-  };
-
-  const on = (type: string, fn: (payload: any) => void) => {
-    if (!handlers.has(type)) handlers.set(type, []);
-    handlers.get(type)!.push(fn);
-    return () => {
-      const fns = handlers.get(type) ?? [];
-      handlers.set(
-        type,
-        fns.filter((f) => f !== fn),
-      );
+    socket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data as string);
+        dispatch(msg);
+      } catch {
+        console.warn("[WS] non-JSON message", event.data);
+      }
     };
-  };
 
-  return { connected, connect, disconnect, on };
+    socket.onerror = () => {};
+
+    socket.onclose = (ev) => {
+      console.debug(`[WS] closed (code=${ev.code}, retries=${retryCount})`);
+      socket = null;
+      const isCleanClose = ev.code === 1000 || ev.code === 1001;
+      if (isCleanClose || !currentToken) return;
+      if (retryCount >= MAX_RETRIES) {
+        console.warn(`[WS] giving up after ${MAX_RETRIES} retries`);
+        return;
+      }
+      const delay = backoffDelay();
+      retryCount++;
+      reconnectTimer = setTimeout(() => connect(currentToken), delay);
+    };
+  }
+
+  function disconnect() {
+    currentToken = "";
+    retryCount = 0;
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    if (socket) {
+      socket.close(1000, "logout");
+      socket = null;
+    }
+  }
+
+  function send(data: unknown) {
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(data));
+    }
+  }
+
+  return { connect, disconnect, send };
 };

@@ -2,21 +2,37 @@
 definePageMeta({ layout: "auth" });
 useHead({ title: "Sign In" });
 
+const { login } = useAuth();
+const route = useRoute();
+
 const email = ref("");
 const password = ref("");
 const loading = ref(false);
 const error = ref("");
 
 const onSubmit = async () => {
+  error.value = "";
+
   if (!email.value || !password.value) {
     error.value = "Please enter your email and password.";
     return;
   }
+
   loading.value = true;
-  error.value = "";
-  // Auth service call wired in Phase 2
-  await new Promise((r) => setTimeout(r, 800));
-  loading.value = false;
+  try {
+    await login(email.value, password.value);
+
+    // Redirect to the originally requested page, or dashboard
+    const redirect = route.query.redirect as string | undefined;
+    await navigateTo(redirect ?? "/");
+  } catch (e: unknown) {
+    error.value =
+      e instanceof Error
+        ? e.message
+        : "Invalid email or password. Please try again.";
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
@@ -42,6 +58,7 @@ const onSubmit = async () => {
         type="email"
         placeholder="you@example.com"
         icon="lucide:mail"
+        :disabled="loading"
       />
       <UiInput
         v-model="password"
@@ -49,6 +66,8 @@ const onSubmit = async () => {
         type="password"
         placeholder="••••••••"
         icon="lucide:lock"
+        :disabled="loading"
+        @keyup.enter="onSubmit"
       />
 
       <div class="flex items-center justify-between">

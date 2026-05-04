@@ -1,57 +1,33 @@
-// useNotifications — Phase 6 wires this to the notifications API + WebSocket
-export interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  is_read: boolean;
-  created_at: string;
-}
+import type { Notification } from "~/types/notification.types";
 
 export const useNotifications = () => {
   const api = useApi();
-  const notifications = ref<Notification[]>([]);
+  const store = useNotificationStore();
   const loading = ref(false);
-  const unreadCount = computed(
-    () => notifications.value.filter((n) => !n.is_read).length,
-  );
+  const error = ref<string | null>(null);
 
-  const list = async () => {
+  const fetch = async () => {
     loading.value = true;
+    error.value = null;
     try {
-      notifications.value = await api.get<Notification[]>(
-        "/api/v1/notifications",
-      );
-    } catch {
-      /* silently fail */
+      const items = await api.get<Notification[]>("/api/v1/notifications");
+      store.set(items);
+    } catch (e: any) {
+      error.value = e.message;
     } finally {
       loading.value = false;
     }
   };
 
   const markRead = async (id: string) => {
+    store.markRead(id);
     await api.patch(`/api/v1/notifications/${id}/read`, {});
-    const n = notifications.value.find((n) => n.id === id);
-    if (n) n.is_read = true;
   };
 
   const markAllRead = async () => {
+    store.markAllRead();
     await api.patch("/api/v1/notifications/read-all", {});
-    notifications.value.forEach((n) => (n.is_read = true));
   };
 
-  // Push new notification (called by WebSocket handler in Phase 9)
-  const push = (n: Notification) => {
-    notifications.value.unshift(n);
-  };
-
-  return {
-    notifications,
-    loading,
-    unreadCount,
-    list,
-    markRead,
-    markAllRead,
-    push,
-  };
+  return { loading, error, fetch, markRead, markAllRead };
 };

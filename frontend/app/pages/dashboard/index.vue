@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ requiresAuth: true });
 useHead({ title: "My Dashboard" });
 
 // Phase 2: protect via auth middleware

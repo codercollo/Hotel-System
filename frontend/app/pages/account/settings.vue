@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ requiresAuth: true });
 useHead({ title: "Account Settings" });
 
 const notifications = reactive({

@@ -40,6 +40,8 @@ const facilities: Facility[] = [
   },
 ];
 
+const showVideo = ref(false);
+
 const featuredFacility = computed<Facility>(() => facilities[0]!);
 
 const tickerItems = [
@@ -57,59 +59,13 @@ const stats = [
   { value: "99%", label: "Guest Satisfaction" },
 ];
 
-// Simulated rooms — replaced by real API in Phase 3
-const featuredRooms = [
-  {
-    id: "room-1",
-    name: "Deluxe Room",
-    description: "Spacious room with garden views and premium amenities.",
-    price: 25000,
-    images: [],
-    rating: 4.9,
-    badges: ["Luxury Room"],
-    metadata: {
-      beds: 1,
-      baths: 1,
-      sqft: 300,
-      rating: 4.9,
-      badges: ["Luxury Room"],
-    },
-  },
-  {
-    id: "room-2",
-    name: "The Pearl Suite",
-    description:
-      "Our signature suite with panoramic city views and butler service.",
-    price: 45000,
-    images: [],
-    rating: 5.0,
-    badges: ["Luxury Suites"],
-    metadata: {
-      beds: 2,
-      baths: 2,
-      sqft: 400,
-      rating: 5.0,
-      badges: ["Luxury Suites"],
-    },
-  },
-  {
-    id: "room-3",
-    name: "Golden Executive",
-    description:
-      "Executive suite with workspace, lounge and exclusive floor access.",
-    price: 55000,
-    images: [],
-    rating: 4.9,
-    badges: ["Premium"],
-    metadata: {
-      beds: 3,
-      baths: 2,
-      sqft: 700,
-      rating: 4.9,
-      badges: ["Premium"],
-    },
-  },
-];
+// ── REAL API DATA — replaces the mock featuredRooms array ────────────────────
+const {
+  data: featuredRooms,
+  pending: roomsLoading,
+  error: roomsError,
+} = await useFeaturedItems(3);
+// ────────────────────────────────────────────────────────────────────────────
 
 // Booking widget state
 const checkIn = ref("");
@@ -171,7 +127,7 @@ const guests = ref("1");
           <h1
             class="font-display text-display-xl text-white font-light leading-tight mb-6 animate-fade-up delay-200"
           >
-            The Ultimate Luxury Hotel Experience in New Jersey
+            The Ultimate Luxury Hotel Experience in Nairobi
           </h1>
 
           <p
@@ -187,7 +143,10 @@ const guests = ref("1");
             <NuxtLink to="/items">
               <UiButton size="md" variant="gold">Discover More</UiButton>
             </NuxtLink>
-            <button class="btn-ghost flex items-center gap-2">
+            <button
+              @click="showVideo = true"
+              class="btn-ghost flex items-center gap-2"
+            >
               <div
                 class="w-10 h-10 rounded-full border-2 border-white/40 flex items-center justify-center"
               >
@@ -281,21 +240,40 @@ const guests = ref("1");
       </div>
     </div>
 
+    <UiModal :open="showVideo" @close="showVideo = false">
+      <div class="aspect-video w-full rounded-xl overflow-hidden bg-black">
+        <iframe
+          class="w-full h-full"
+          src="https://www.youtube.com/embed/LXb3EKWsInQ?autoplay=1"
+          title="Luxury Hotel Experience"
+          frameborder="0"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowfullscreen
+        />
+      </div>
+    </UiModal>
+
     <!-- ══ ABOUT ══════════════════════════════════════════════════════ -->
     <section class="section-py section-px max-w-7xl mx-auto">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
         <!-- Image block -->
         <div class="relative">
-          <div
-            class="rounded-2xl overflow-hidden aspect-[4/3] bg-surface-200 relative"
-          >
+          <div class="rounded-2xl overflow-hidden aspect-[4/3] relative">
+            <NuxtImg
+              src="/images/hotel/about-lobby.jpg"
+              alt="Luxury hotel lobby with elegant lighting and marble floors"
+              format="webp"
+              quality="85"
+              loading="lazy"
+              class="w-full h-full object-cover object-center"
+            />
+
+            <!-- Soft overlay for brand tone -->
             <div
               class="absolute inset-0 bg-gradient-to-br from-forest/20 to-brand-900/10"
             />
-            <div class="absolute inset-0 flex items-center justify-center">
-              <Icon name="lucide:image" class="w-16 h-16 text-surface-300" />
-            </div>
           </div>
+
           <!-- Years badge -->
           <div
             class="absolute bottom-6 left-6 bg-accent text-white rounded-xl px-5 py-4 shadow-lg"
@@ -381,7 +359,22 @@ const guests = ref("1");
         </h2>
       </div>
 
-      <ItemGrid :items="featuredRooms" :cols="3" />
+      <!-- Error state -->
+      <div
+        v-if="roomsError"
+        class="text-center py-8 text-muted font-sans text-sm"
+      >
+        <Icon name="lucide:wifi-off" class="w-8 h-8 mx-auto mb-2 opacity-40" />
+        <p>Could not load rooms. Please try again later.</p>
+      </div>
+
+      <!-- Real data or loading skeletons — ItemGrid handles both -->
+      <ItemGrid
+        v-else
+        :items="featuredRooms ?? []"
+        :loading="roomsLoading"
+        :cols="3"
+      />
 
       <div class="text-center mt-10">
         <NuxtLink to="/items">
@@ -480,11 +473,25 @@ const guests = ref("1");
           Take a Virtual Tour of Our Hotel
         </h2>
         <button
+          @click="showVideo = true"
           class="w-16 h-16 rounded-full border-2 border-white/40 flex items-center justify-center mx-auto hover:border-accent hover:bg-accent/10 transition-all"
         >
           <Icon name="lucide:play" class="w-6 h-6 text-white ml-1" />
         </button>
       </div>
     </section>
+
+    <UiModal :open="showVideo" @close="showVideo = false">
+      <div class="aspect-video w-full rounded-xl overflow-hidden bg-black">
+        <iframe
+          class="w-full h-full"
+          src="https://www.youtube.com/embed/LXb3EKWsInQ?autoplay=1"
+          title="Luxury Hotel Virtual Tour"
+          frameborder="0"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowfullscreen
+        />
+      </div>
+    </UiModal>
   </div>
 </template>

@@ -1,38 +1,39 @@
-// useSearch — Phase 8 wires this to the search API
+import type { SearchResult } from "~/types/search.types";
+
 export const useSearch = () => {
   const api = useApi();
   const query = ref("");
-  const results = ref<any[]>([]);
+  const results = ref<SearchResult[]>([]);
   const loading = ref(false);
 
-  const search = useDebounceFn(async (q: string) => {
+  let timer: ReturnType<typeof setTimeout>;
+
+  const search = async (q: string) => {
     if (!q.trim()) {
       results.value = [];
       return;
     }
     loading.value = true;
     try {
-      results.value = await api.get("/api/v1/search", { q });
+      results.value = await api.get<SearchResult[]>("/api/v1/search", { q });
     } catch {
       results.value = [];
     } finally {
       loading.value = false;
     }
-  }, 300);
-
-  watch(query, search);
-
-  return { query, results, loading, search };
-};
-
-// Minimal debounce helper (replaces VueUse dependency)
-function useDebounceFn<T extends (...args: any[]) => any>(
-  fn: T,
-  delay: number,
-) {
-  let timer: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
   };
-}
+
+  const debouncedSearch = (q: string) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => search(q), 300);
+  };
+
+  watch(query, debouncedSearch);
+
+  const clear = () => {
+    query.value = "";
+    results.value = [];
+  };
+
+  return { query, results, loading, search, debouncedSearch, clear };
+};

@@ -51,7 +51,7 @@ const services = [
         </div>
         <p class="text-sm leading-relaxed text-white/60 mb-5">
           Where luxury meets excellence. Timeless elegance and comfort await you
-          in New Jersey.
+          in Nairobi.
         </p>
         <div class="flex items-center gap-3">
           <a
@@ -116,7 +116,7 @@ const services = [
               name="lucide:map-pin"
               class="w-4 h-4 mt-0.5 text-amber-400 shrink-0"
             />
-            2464 Royal Ln, Mesa, New Jersey 45463
+            2464 Royal Ln, Mesa, Nairobi 45463
           </li>
           <li class="flex items-center gap-3 text-sm text-white/60">
             <Icon name="lucide:phone" class="w-4 h-4 text-amber-400 shrink-0" />

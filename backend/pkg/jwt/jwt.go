@@ -83,6 +83,12 @@ func (m *Manager) Parse(tokenStr string) (*Claims, error) {
 	return claims, nil
 }
 
+// RefreshTTL returns the refresh-token lifetime.
+// Used by auth.Service.issueTokenPair to set session expiry.
+func (m *Manager) RefreshTTL() time.Duration {
+	return m.refreshExpiry
+}
+
 // ParseRefresh validates that the token is a valid refresh token.
 func (m *Manager) ParseRefresh(tokenStr string) (*Claims, error) {
 	claims, err := m.Parse(tokenStr)

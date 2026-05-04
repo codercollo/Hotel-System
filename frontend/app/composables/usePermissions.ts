@@ -1,16 +1,23 @@
-// usePermissions — RBAC checks mirrored from backend roles
-// Phase 2 expands this once roles are loaded from the API
+/**
+ * usePermissions — thin RBAC helper composable.
+ *
+ * Reads the current user's role from the auth store and exposes
+ * boolean guards used throughout the UI.
+ */
 export const usePermissions = () => {
   const store = useAuthStore();
+  const role = computed(() => store.user?.role ?? null);
 
-  const can = (permission: string): boolean => {
-    if (store.isAdmin) return true;
-    // Expand in Phase 2 with per-user permission list from API
-    const userPermissions = ["items:read", "orders:create", "orders:read"];
-    return userPermissions.includes(permission);
+  const hasRole = (...roles: string[]) =>
+    computed(() => !!role.value && roles.includes(role.value));
+
+  return {
+    role,
+    isAdmin: hasRole("admin"),
+    isGuest: hasRole("guest"),
+    isStaff: hasRole("staff", "admin"),
+    /** True if the current user owns the given resource by userId */
+    isSelf: (userId: string) => computed(() => store.user?.user_id === userId),
+    hasRole,
   };
-
-  const isAdmin = computed(() => store.isAdmin);
-
-  return { can, isAdmin };
 };

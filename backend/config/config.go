@@ -75,14 +75,18 @@ type EventsConfig struct {
 func Load() (*Config, error) {
 	v := viper.New()
 
-	// Read from environment
+	// --- Load .env first (from possible working dirs) ---
+	v.SetConfigName(".env")
+	v.SetConfigType("env")
+	v.AddConfigPath(".")
+	v.AddConfigPath("..")
+	v.AddConfigPath("../..")
+
+	_ = v.ReadInConfig() // ignore if missing
+
+	// --- Then allow OS env to override ---
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	// Attempt to read a .env file; ignore if absent (Docker already injects env).
-	v.SetConfigFile(".env")
-	v.SetConfigType("env")
-	_ = v.ReadInConfig()
 
 	setDefaults(v)
 
@@ -118,7 +122,7 @@ func Load() (*Config, error) {
 	cfg.Log.Level = v.GetString("LOG_LEVEL")
 	cfg.Log.Format = v.GetString("LOG_FORMAT")
 
-	// CORS — split comma-separated origins
+	// CORS
 	rawOrigins := v.GetString("CORS_ORIGINS")
 	for _, o := range strings.Split(rawOrigins, ",") {
 		if t := strings.TrimSpace(o); t != "" {
