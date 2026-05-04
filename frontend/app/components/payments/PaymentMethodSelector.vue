@@ -1,11 +1,16 @@
 <script setup lang="ts">
-const selected = defineModel<string>({ default: "card" });
+// v-model maps to the provider string sent to the backend.
+// IDs MUST match the backend validator: oneof=mpesa stripe flutterwave paystack
+const selected = defineModel<string>({ default: "stripe" });
 
 const methods = [
-  { id: "card", icon: "lucide:credit-card", label: "Credit / Debit Card" },
+  { id: "stripe", icon: "lucide:credit-card", label: "Credit / Debit Card" },
   { id: "mpesa", icon: "lucide:smartphone", label: "M-Pesa" },
-  { id: "paypal", icon: "lucide:wallet", label: "PayPal" },
-];
+  { id: "flutterwave", icon: "lucide:wallet", label: "Flutterwave" },
+  { id: "paystack", icon: "lucide:banknote", label: "Paystack" },
+] as const;
+
+export type PaymentProvider = (typeof methods)[number]["id"];
 </script>
 
 <template>

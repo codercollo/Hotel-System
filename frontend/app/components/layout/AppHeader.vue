@@ -58,7 +58,7 @@ onBeforeUnmount(() => {
           </a>
           <span class="hidden lg:flex items-center gap-1.5 text-white/60">
             <Icon name="lucide:map-pin" class="w-3 h-3" />
-            2464 Royal Ln, Mesa, New Jersey 45463
+            2464 Royal Ln, Mesa, Nairobi 45463
           </span>
         </div>
         <div class="flex items-center gap-3">

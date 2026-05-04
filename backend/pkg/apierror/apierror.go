@@ -121,6 +121,7 @@ var (
 	ErrTokenExpired = New(http.StatusUnauthorized, CodeTokenExpired, "token has expired")
 	ErrTokenInvalid = New(http.StatusUnauthorized, CodeTokenInvalid, "token is invalid")
 	ErrInvalidCreds = New(http.StatusUnauthorized, CodeInvalidCredentials, "invalid credentials")
+	ErrInternal     = New(http.StatusInternalServerError, CodeInternal, "an unexpected error occurred")
 	ErrUserExists   = Conflict(CodeUserExists, "a user with this email already exists")
 )
 
@@ -133,4 +134,14 @@ func IsAPIError(err error) (*APIError, bool) {
 		return ae, true
 	}
 	return nil, false
+}
+
+// NewValidation creates a 422 Unprocessable Entity error with per-field messages.
+func NewValidation(fields map[string]string) *APIError {
+	return &APIError{
+		Status:  http.StatusUnprocessableEntity,
+		Code:    CodeValidation,
+		Message: "one or more fields failed validation",
+		Detail:  fields,
+	}
 }

@@ -2,6 +2,8 @@
 definePageMeta({ layout: "auth" });
 useHead({ title: "Create Account" });
 
+const { register } = useAuth();
+
 const name = ref("");
 const email = ref("");
 const password = ref("");
@@ -10,14 +12,33 @@ const loading = ref(false);
 const error = ref("");
 
 const onSubmit = async () => {
+  error.value = "";
+
+  if (!name.value || !email.value || !password.value || !confirm.value) {
+    error.value = "Please fill in all fields.";
+    return;
+  }
+
   if (password.value !== confirm.value) {
     error.value = "Passwords do not match.";
     return;
   }
+
+  if (password.value.length < 8) {
+    error.value = "Password must be at least 8 characters.";
+    return;
+  }
+
   loading.value = true;
-  error.value = "";
-  await new Promise((r) => setTimeout(r, 800));
-  loading.value = false;
+  try {
+    await register(name.value, email.value, password.value);
+    await navigateTo("/");
+  } catch (e: unknown) {
+    error.value =
+      e instanceof Error ? e.message : "Registration failed. Please try again.";
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
@@ -42,6 +63,7 @@ const onSubmit = async () => {
         label="Full Name"
         placeholder="Jane Smith"
         icon="lucide:user"
+        :disabled="loading"
       />
       <UiInput
         v-model="email"
@@ -49,6 +71,7 @@ const onSubmit = async () => {
         type="email"
         placeholder="you@example.com"
         icon="lucide:mail"
+        :disabled="loading"
       />
       <UiInput
         v-model="password"
@@ -56,6 +79,7 @@ const onSubmit = async () => {
         type="password"
         placeholder="At least 8 characters"
         icon="lucide:lock"
+        :disabled="loading"
       />
       <UiInput
         v-model="confirm"
@@ -63,6 +87,8 @@ const onSubmit = async () => {
         type="password"
         placeholder="Repeat password"
         icon="lucide:lock"
+        :disabled="loading"
+        @keyup.enter="onSubmit"
       />
 
       <UiButton

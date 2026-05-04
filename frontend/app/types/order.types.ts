@@ -1,3 +1,13 @@
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  item_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  subtotal: number;
+}
+
 export interface Order {
   id: string;
   user_id: string;
@@ -11,18 +21,19 @@ export interface Order {
   updated_at: string;
 }
 
-export interface OrderItem {
-  id: string;
-  order_id: string;
-  item_id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  subtotal: number;
-}
-
 export interface CreateOrderRequest {
   items: { item_id: string; quantity: number }[];
   notes?: string;
   metadata?: Record<string, unknown>;
+}
+
+export interface PaginatedMeta {
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface Paginated<T> {
+  data: T;
+  meta: PaginatedMeta;
 }

@@ -1,3 +1,5 @@
+include .env
+export
 .PHONY: run build test test-integration lint migrate migrate-down tidy clean
 
 MODULE := github.com/codercollo/hotel-system/backend
@@ -18,11 +20,14 @@ test-integration:
 lint:
 	golangci-lint run ./...
 
-migrate:
-	./scripts/migrate.sh up
+migrate-up:
+	migrate -path database/migrations \
+		-database "$(DATABASE_URL)" up
 
 migrate-down:
-	./scripts/migrate.sh down
+	migrate -path database/migrations \
+		-database "$(DATABASE_URL)" down
+
 
 tidy:
 	go mod tidy

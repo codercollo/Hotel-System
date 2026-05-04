@@ -1,6 +1,9 @@
 package middleware
 
 import (
+	"bufio"
+	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -12,9 +15,7 @@ func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rw := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
-
 		next.ServeHTTP(rw, r)
-
 		l := logger.WithRequestID(GetRequestID(r.Context()))
 		l.Info().
 			Str("method", r.Method).
@@ -35,4 +36,17 @@ type statusRecorder struct {
 func (sr *statusRecorder) WriteHeader(code int) {
 	sr.status = code
 	sr.ResponseWriter.WriteHeader(code)
+}
+
+// Hijack implements http.Hijacker so that WebSocket upgrades work when the
+// logger middleware is in the chain. Delegates to the underlying ResponseWriter.
+// Without this, golang.org/x/net/websocket panics with:
+//
+//	"interface conversion: *middleware.statusRecorder is not http.Hijacker"
+func (sr *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := sr.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, fmt.Errorf("middleware: underlying ResponseWriter %T does not implement http.Hijacker", sr.ResponseWriter)
+	}
+	return h.Hijack()
 }

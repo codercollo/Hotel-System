@@ -1,5 +1,10 @@
 <script setup lang="ts">
+definePageMeta({ requiresAuth: true });
 useHead({ title: "My Bookings" });
+
+const { orders, loading, error, list } = useOrders();
+
+onMounted(() => list());
 
 const formatPrice = (p: number) =>
   (p / 100).toLocaleString("en-US", {
@@ -7,52 +12,13 @@ const formatPrice = (p: number) =>
     currency: "USD",
     maximumFractionDigits: 0,
   });
+
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
-
-// Placeholder data — replaced by useOrders() in Phase 4
-const orders = [
-  {
-    id: "ORD-001",
-    room: "The Pearl Suite",
-    checkIn: "2025-07-15",
-    checkOut: "2025-07-18",
-    nights: 3,
-    total: 135000,
-    status: "confirmed",
-  },
-  {
-    id: "ORD-002",
-    room: "Deluxe Room",
-    checkIn: "2025-05-10",
-    checkOut: "2025-05-12",
-    nights: 2,
-    total: 50000,
-    status: "completed",
-  },
-  {
-    id: "ORD-003",
-    room: "Honeymoon Suite",
-    checkIn: "2025-04-01",
-    checkOut: "2025-04-04",
-    nights: 3,
-    total: 195000,
-    status: "completed",
-  },
-  {
-    id: "ORD-004",
-    room: "Classic Room",
-    checkIn: "2025-06-20",
-    checkOut: "2025-06-21",
-    nights: 1,
-    total: 18000,
-    status: "cancelled",
-  },
-];
 
 const statusMap: Record<
   string,
@@ -61,8 +27,27 @@ const statusMap: Record<
   confirmed: { label: "Confirmed", variant: "forest" },
   completed: { label: "Completed", variant: "muted" },
   pending: { label: "Pending", variant: "gold" },
+  processing: { label: "Processing", variant: "gold" },
   cancelled: { label: "Cancelled", variant: "muted" },
 };
+
+// Derive hotel-style display fields from the order
+const roomName = (o: (typeof orders.value)[0]) =>
+  (o.metadata?.room_name as string) || o.items[0]?.name || "Room Booking";
+
+const nights = (o: (typeof orders.value)[0]) => {
+  const checkIn = o.metadata?.check_in as string | undefined;
+  const checkOut = o.metadata?.check_out as string | undefined;
+  if (!checkIn || !checkOut) return o.items[0]?.quantity ?? 1;
+  return Math.round(
+    (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86_400_000,
+  );
+};
+
+const checkIn = (o: (typeof orders.value)[0]) =>
+  (o.metadata?.check_in as string) || o.created_at;
+const checkOut = (o: (typeof orders.value)[0]) =>
+  (o.metadata?.check_out as string) || o.updated_at;
 </script>
 
 <template>
@@ -74,40 +59,46 @@ const statusMap: Record<
       </h1>
     </div>
 
-    <div class="space-y-4">
+    <!-- Loading -->
+    <div v-if="loading" class="space-y-4">
+      <UiSkeleton v-for="i in 3" :key="i" class="h-24 rounded-2xl" />
+    </div>
+
+    <!-- Error -->
+    <UiAlert v-else-if="error" variant="error" :message="error" class="mb-6" />
+
+    <!-- List -->
+    <div v-else class="space-y-4">
       <NuxtLink
         v-for="o in orders"
         :key="o.id"
         :to="`/orders/${o.id}`"
         class="card p-5 flex flex-col sm:flex-row items-start sm:items-center gap-5 group"
       >
-        <!-- Icon -->
         <div
           class="w-12 h-12 rounded-xl bg-forest/8 flex items-center justify-center shrink-0"
         >
           <Icon name="lucide:bed-double" class="w-6 h-6 text-forest" />
         </div>
 
-        <!-- Details -->
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-1">
             <span class="font-display text-lg text-brand-900 leading-tight">{{
-              o.room
+              roomName(o)
             }}</span>
             <UiBadge :variant="statusMap[o.status]?.variant ?? 'muted'">
               {{ statusMap[o.status]?.label ?? o.status }}
             </UiBadge>
           </div>
           <div class="text-xs font-sans text-muted">
-            {{ formatDate(o.checkIn) }} → {{ formatDate(o.checkOut) }} ·
-            {{ o.nights }} night{{ o.nights > 1 ? "s" : "" }}
+            {{ formatDate(checkIn(o)) }} → {{ formatDate(checkOut(o)) }} ·
+            {{ nights(o) }} night{{ nights(o) !== 1 ? "s" : "" }}
           </div>
           <div class="text-xs font-sans text-muted mt-0.5 font-mono">
             {{ o.id }}
           </div>
         </div>
 
-        <!-- Total + arrow -->
         <div class="flex items-center gap-4 shrink-0">
           <div class="text-right">
             <div class="font-display text-xl text-brand-900">

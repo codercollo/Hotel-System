@@ -1,5 +1,9 @@
 <script setup lang="ts">
-definePageMeta({ layout: "admin" });
+definePageMeta({
+  layout: "admin",
+  middleware: ["admin"],
+  requiresAuth: true,
+});
 useHead({ title: "Platform Settings" });
 
 const settings = reactive({

@@ -1,15 +1,27 @@
-// Global middleware: routes with meta.requiresAuth = true redirect to /auth/login
-// when the user is not authenticated. Phase 2 wires this to the auth store.
+// middleware/auth.global.ts
+const PROTECTED_PREFIXES = ["/dashboard", "/orders", "/account", "/admin"];
+
 export default defineNuxtRouteMiddleware((to) => {
-  const protectedPrefixes = ["/dashboard", "/orders", "/account", "/admin"];
-  const needsAuth = protectedPrefixes.some((p) => to.path.startsWith(p));
+  if (import.meta.server) return;
 
-  if (!needsAuth) return;
+  const store = useAuthStore();
+  const isAuth = store.isAuthenticated;
+  const isAuthRoute = to.path.startsWith("/auth");
 
-  // Phase 2: replace with real auth store check
-  const isAuthenticated = false;
+  const isProtected =
+    to.meta.requiresAuth === true ||
+    PROTECTED_PREFIXES.some((prefix) => to.path.startsWith(prefix));
 
-  if (!isAuthenticated) {
-    return navigateTo("/auth/login");
+  // Authenticated user on /auth/* → send home
+  if (isAuth && isAuthRoute) {
+    return navigateTo("/");
+  }
+
+  // Unauthenticated user on protected route → login with redirect
+  if (!isAuth && isProtected) {
+    return navigateTo({
+      path: "/auth/login",
+      query: { redirect: to.fullPath !== "/" ? to.fullPath : undefined },
+    });
   }
 });

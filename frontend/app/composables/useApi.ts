@@ -1,5 +1,18 @@
 // useApi provides a typed fetch wrapper that prepends the API base URL,
-// attaches the auth token from the auth store, and handles error envelopes.
+// attaches the auth token, and handles error envelopes.
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public detail?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export const useApi = () => {
   const config = useRuntimeConfig();
   const base = config.public.apiBase as string;
@@ -9,29 +22,22 @@ export const useApi = () => {
     opts: RequestInit & { params?: Record<string, string> } = {},
   ): Promise<T> => {
     const { params, ...fetchOpts } = opts;
-
     let url = `${base}${path}`;
     if (params) {
       const q = new URLSearchParams(params);
       url += `?${q.toString()}`;
     }
 
-    // Attach bearer token if present in localStorage (Phase 2 will use Pinia store)
+    // Attach bearer token if present (Phase 2 will migrate to Pinia auth store)
     const token = import.meta.client
       ? localStorage.getItem("access_token")
       : null;
-    if (token) {
-      fetchOpts.headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        ...fetchOpts.headers,
-      };
-    } else {
-      fetchOpts.headers = {
-        "Content-Type": "application/json",
-        ...fetchOpts.headers,
-      };
-    }
+
+    fetchOpts.headers = {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...fetchOpts.headers,
+    };
 
     const res = await fetch(url, fetchOpts);
 
@@ -45,8 +51,13 @@ export const useApi = () => {
       );
     }
 
+    // Handle 204 No Content
+    if (res.status === 204) return undefined as T;
+
     const body = await res.json();
-    return body.data as T;
+
+    // Support both envelope { data: [...] } and bare array/object responses
+    return (body?.data !== undefined ? body.data : body) as T;
   };
 
   return {
@@ -61,15 +72,3 @@ export const useApi = () => {
     del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   };
 };
-
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    public code: string,
-    message: string,
-    public detail?: unknown,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}

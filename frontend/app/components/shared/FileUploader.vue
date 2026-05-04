@@ -1,121 +1,159 @@
 <script setup lang="ts">
-const open = ref(false);
-const items = ref([
-  {
-    id: 1,
-    title: "Booking Confirmed",
-    body: "Your stay at The Pearl Suite is confirmed for Jul 15.",
-    time: "2m ago",
-    read: false,
-  },
-  {
-    id: 2,
-    title: "Payment Received",
-    body: "Payment of $1,552 has been processed successfully.",
-    time: "1h ago",
-    read: false,
-  },
-  {
-    id: 3,
-    title: "Check-Out Reminder",
-    body: "Your check-out is tomorrow at 11:00 AM.",
-    time: "1d ago",
-    read: true,
-  },
-]);
+const props = defineProps<{
+  accept?: string;
+  maxSizeMb?: number;
+  multiple?: boolean;
+}>();
 
-const unread = computed(() => items.value.filter((n) => !n.read).length);
-const markAll = () => items.value.forEach((n) => (n.read = true));
+const emit = defineEmits<{
+  uploaded: [urls: string[]];
+  error: [message: string];
+}>();
+
+const uploading = ref(false);
+const progress = ref(0);
+const previews = ref<{ name: string; url: string; id: string }[]>([]);
+const dragOver = ref(false);
+const inputRef = ref<HTMLInputElement>();
+
+const maxBytes = computed(() => (props.maxSizeMb ?? 10) * 1024 * 1024);
+const accept = computed(() => props.accept ?? "image/*");
+
+async function uploadFiles(files: FileList | File[]) {
+  const list = Array.from(files);
+  if (!list.length) return;
+
+  for (const file of list) {
+    if (file.size > maxBytes.value) {
+      emit("error", `${file.name} exceeds ${props.maxSizeMb ?? 10}MB limit`);
+      return;
+    }
+  }
+
+  uploading.value = true;
+  progress.value = 0;
+
+  const urls: string[] = [];
+
+  try {
+    const config = useRuntimeConfig();
+    const token = import.meta.client
+      ? localStorage.getItem("access_token")
+      : null;
+    for (const file of list) {
+      const form = new FormData();
+      form.append("file", file);
+
+      const res = await fetch(`${config.public.apiBase}/api/v1/uploads`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error?.message ?? "Upload failed");
+      }
+
+      const body = await res.json();
+      const upload = body?.data ?? body;
+      previews.value.push({ name: file.name, url: upload.url, id: upload.id });
+      urls.push(upload.url);
+      progress.value = Math.round((previews.value.length / list.length) * 100);
+    }
+
+    emit("uploaded", urls);
+  } catch (e: any) {
+    emit("error", e.message ?? "Upload failed");
+  } finally {
+    uploading.value = false;
+  }
+}
+
+const onFileInput = (e: Event) => {
+  const files = (e.target as HTMLInputElement).files;
+  if (files) uploadFiles(files);
+};
+
+const onDrop = (e: DragEvent) => {
+  dragOver.value = false;
+  const files = e.dataTransfer?.files;
+  if (files) uploadFiles(files);
+};
+
+const remove = (id: string) => {
+  previews.value = previews.value.filter((p) => p.id !== id);
+};
 </script>
 
 <template>
-  <div class="relative">
-    <button
-      @click="open = !open"
-      class="relative p-2 text-muted hover:text-brand-900 transition-colors"
+  <div class="space-y-3">
+    <!-- Drop zone -->
+    <div
+      :class="[
+        'border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer',
+        dragOver
+          ? 'border-forest bg-forest/5'
+          : 'border-surface-200 hover:border-forest/40 hover:bg-surface-50',
+        uploading ? 'pointer-events-none opacity-60' : '',
+      ]"
+      @click="inputRef?.click()"
+      @dragover.prevent="dragOver = true"
+      @dragleave="dragOver = false"
+      @drop.prevent="onDrop"
     >
-      <Icon name="lucide:bell" class="w-5 h-5" />
-      <span
-        v-if="unread > 0"
-        class="absolute top-1 right-1 w-4 h-4 bg-accent text-white text-[9px] font-bold rounded-full flex items-center justify-center"
-        >{{ unread }}</span
-      >
-    </button>
+      <input
+        ref="inputRef"
+        type="file"
+        class="hidden"
+        :accept="accept"
+        :multiple="multiple"
+        @change="onFileInput"
+      />
 
-    <!-- Dropdown -->
-    <Transition name="dropdown">
-      <div
-        v-if="open"
-        class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-card-hover border border-surface-200 z-50 overflow-hidden"
-      >
-        <div
-          class="flex items-center justify-between px-4 py-3 border-b border-surface-200"
-        >
-          <span class="font-display text-base text-brand-900"
-            >Notifications</span
-          >
-          <button
-            @click="markAll"
-            class="text-xs text-forest font-sans hover:underline"
-          >
-            Mark all read
-          </button>
-        </div>
-
-        <ul class="divide-y divide-surface-200 max-h-72 overflow-y-auto">
-          <li
-            v-for="n in items"
-            :key="n.id"
-            :class="[
-              'px-4 py-3 hover:bg-surface-100 transition-colors',
-              !n.read ? 'bg-forest/3' : '',
-            ]"
-          >
-            <div class="flex items-start gap-2.5">
-              <div
-                :class="[
-                  'w-2 h-2 rounded-full mt-1.5 shrink-0',
-                  !n.read ? 'bg-accent' : 'bg-transparent',
-                ]"
-              />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-sans font-medium text-brand-900">
-                  {{ n.title }}
-                </p>
-                <p class="text-xs text-muted font-sans leading-relaxed mt-0.5">
-                  {{ n.body }}
-                </p>
-                <p class="text-[10px] text-muted font-sans mt-1">
-                  {{ n.time }}
-                </p>
-              </div>
-            </div>
-          </li>
-          <li
-            v-if="items.length === 0"
-            class="px-4 py-8 text-center text-muted font-sans text-sm"
-          >
-            No notifications
-          </li>
-        </ul>
+      <div v-if="!uploading">
+        <Icon
+          name="lucide:upload-cloud"
+          class="w-10 h-10 text-muted mx-auto mb-3"
+        />
+        <p class="text-sm font-sans text-brand-900 font-medium">
+          Drop files here or <span class="text-forest underline">browse</span>
+        </p>
+        <p class="text-xs text-muted font-sans mt-1">
+          {{ accept }} · Max {{ maxSizeMb ?? 10 }}MB
+        </p>
       </div>
-    </Transition>
 
-    <!-- Backdrop -->
-    <div v-if="open" class="fixed inset-0 z-40" @click="open = false" />
+      <div v-else class="space-y-2">
+        <Icon
+          name="lucide:loader-2"
+          class="w-8 h-8 text-forest mx-auto animate-spin"
+        />
+        <p class="text-sm font-sans text-muted">Uploading… {{ progress }}%</p>
+        <div class="w-full bg-surface-200 rounded-full h-1.5 overflow-hidden">
+          <div
+            class="bg-forest h-1.5 rounded-full transition-all duration-300"
+            :style="{ width: `${progress}%` }"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Previews -->
+    <div v-if="previews.length" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+      <div
+        v-for="p in previews"
+        :key="p.id"
+        class="relative group rounded-lg overflow-hidden aspect-square bg-surface-200"
+      >
+        <img :src="p.url" :alt="p.name" class="w-full h-full object-cover" />
+        <button
+          class="absolute top-1 right-1 w-5 h-5 rounded-full bg-brand-900/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          @click.stop="remove(p.id)"
+        >
+          <Icon name="lucide:x" class="w-3 h-3" />
+        </button>
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.dropdown-enter-active,
-.dropdown-leave-active {
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
-}
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-</style>
