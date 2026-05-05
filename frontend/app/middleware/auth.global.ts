@@ -101,7 +101,7 @@
 //   };
 // });
 
-// middleware/auth.global.ts
+/// app/middleware/auth.global.ts
 const PROTECTED_PREFIXES = ["/dashboard", "/orders", "/account", "/admin"];
 
 export default defineNuxtRouteMiddleware((to) => {
@@ -114,19 +114,17 @@ export default defineNuxtRouteMiddleware((to) => {
     to.meta.requiresAuth === true ||
     PROTECTED_PREFIXES.some((prefix) => to.path.startsWith(prefix));
 
-  // Authenticated user on /auth/* → send home
+  // Authenticated user on /auth/* → role-based home
   if (isAuth && isAuthRoute) {
-    return navigateTo("/");
+    return navigateTo(store.user?.role === "admin" ? "/admin" : "/dashboard");
   }
 
   // Unauthenticated user on protected route → login with redirect
   if (!isAuth && isProtected) {
-    // Only keep the redirect if it's a safe internal path (not /auth/*)
     const redirect =
       to.fullPath !== "/" && !to.path.startsWith("/auth")
         ? to.fullPath
         : undefined;
-
     return navigateTo({ path: "/auth/login", query: { redirect } });
   }
 });

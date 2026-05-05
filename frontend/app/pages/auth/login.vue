@@ -10,21 +10,52 @@ const password = ref("");
 const loading = ref(false);
 const error = ref("");
 
+// const onSubmit = async () => {
+//   error.value = "";
+
+//   if (!email.value || !password.value) {
+//     error.value = "Please enter your email and password.";
+//     return;
+//   }
+
+//   loading.value = true;
+//   try {
+//     await login(email.value, password.value);
+
+//     // Redirect to the originally requested page, or dashboard
+//     const redirect = route.query.redirect as string | undefined;
+//     await navigateTo(redirect ?? "/");
+//   } catch (e: unknown) {
+//     error.value =
+//       e instanceof Error
+//         ? e.message
+//         : "Invalid email or password. Please try again.";
+//   } finally {
+//     loading.value = false;
+//   }
+// };
+
+// app/pages/auth/login.vue <script setup>
 const onSubmit = async () => {
   error.value = "";
-
   if (!email.value || !password.value) {
     error.value = "Please enter your email and password.";
     return;
   }
-
   loading.value = true;
   try {
     await login(email.value, password.value);
 
-    // Redirect to the originally requested page, or dashboard
+    const store = useAuthStore();
     const redirect = route.query.redirect as string | undefined;
-    await navigateTo(redirect ?? "/");
+
+    // Use explicit redirect param if it's a safe internal path
+    if (redirect && !redirect.startsWith("/auth")) {
+      await navigateTo(redirect);
+    } else {
+      // Role-based default destination
+      await navigateTo(store.user?.role === "admin" ? "/admin" : "/dashboard");
+    }
   } catch (e: unknown) {
     error.value =
       e instanceof Error
